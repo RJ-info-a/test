@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kartenflip</title>
+  <style>
+    :root { --w: 320px; --h: 440px; }
+
+    body{
+      margin:0; height:100vh; display:grid; place-items:center;
+      background:#0b1020;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:#fff; overflow:hidden;
+      text-align:center;
+    }
+
+    .stage{ width: var(--w); height: var(--h); perspective: 1000px; }
+
+    .card{
+      position:relative;
+      width:100%; height:100%;
+      transform-style:preserve-3d;
+      transition: transform 900ms cubic-bezier(.2,.8,.2,1);
+      transform: rotateY(0deg); /* Start: Rückseite */
+      cursor:pointer;
+      outline:none;
+    }
+
+    body[data-flipped="true"] .card{ transform: rotateY(180deg); }
+
+    .face{
+      position:absolute; inset:0;
+      backface-visibility:hidden;
+      border-radius: 14px;
+      box-shadow: 0 28px 60px rgba(0,0,0,.45);
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,.12);
+      display:flex; align-items:center; justify-content:center;
+      background:#fff;
+    }
+
+    .back{ transform: rotateY(180deg); }
+
+    .face img{
+      width:100%;
+      height:100%;
+      object-fit: cover;
+      display:block;
+      user-select:none;
+      -webkit-user-drag:none;
+    }
+
+    .hint{
+      position:fixed;
+      left: 50%; bottom: 18px;
+      transform: translateX(-50%);
+      font-size: 14px;
+      opacity: .7;
+      user-select:none;
+    }
+
+    /* Kontaktdaten-Overlay */
+    .contact-overlay{
+      position:fixed;
+      inset:0;
+      background: #7fd1ff; /* hellblau */
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 500ms ease;
+    }
+    .contact-overlay[data-show="true"]{
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .contact-overlay h2{
+      margin:0;
+      color:#fff;
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: 800;
+      text-shadow: 0 2px 0 rgba(0,0,0,.08);
+    }
+  </style>
+</head>
+<body data-flipped="false">
+  <div class="stage" aria-label="Spielkarte">
+    <div class="card" id="card" role="button" tabindex="0" aria-label="Karte umdrehen">
+      <div class="face back">
+        <img src="back.jpg" alt="Kartenrückseite" />
+      </div>
+
+      <div class="face front">
+        <img src="front.jpg" alt="Herz-Dame Vorderseite" />
+      </div>
+    </div>
+  </div>
+
+  <div class="hint">Klicke zum Umdrehen</div>
+
+  <div class="contact-overlay" id="contactOverlay" data-show="false" aria-hidden="true">
+    <h2>Kontaktdaten</h2>
+  </div>
+
+  <script>
+    const body = document.body;
+    const card = document.getElementById('card');
+    const overlay = document.getElementById('contactOverlay');
+
+    let revealTimer = null;
+    let overlayShown = false;
+
+    function setFlipped(v){
+      body.dataset.flipped = v ? "true" : "false";
+    }
+
+    function showContactOverlay(){
+      if (overlayShown) return;
+      overlayShown = true;
+      overlay.dataset.show = "true";
+      overlay.setAttribute("aria-hidden", "false");
+    }
+
+    function toggle(){
+      const isFlipped = body.dataset.flipped === "true";
+
+      // Nur beim "Reveal" (also von zurück->vor) planen
+      if (!isFlipped) {
+        setFlipped(true);
+
+        // Nach 4 Sekunden Kontaktdaten einblenden
+        clearTimeout(revealTimer);
+        revealTimer = setTimeout(showContactOverlay, 4000);
+      } else {
+        // Optional: beim Zurückdrehen Overlay nicht wieder ausblenden
+        setFlipped(false);
+      }
+    }
+
+    card.addEventListener('click', toggle);
+    card.addEventListener('keydown', (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        toggle();
+      }
+    });
+  </script>
+</body>
+</html>
